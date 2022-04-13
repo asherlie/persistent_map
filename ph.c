@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #if 0
 ph will have a list of hashmaps that will be kept in the memory of a running process
@@ -73,15 +74,18 @@ int create_map(struct persistent_hash* ph){
 	return id;
 }
 
-int hash(void* data, int len){
-	(void)data;
-	(void)len;
-	return 0;
+int hash(void* data, int len, int max){
+    uint64_t sum = 0;
+    for(int i = 0; i < len; ++i){
+        sum += (int8_t)((char*)data)[i];
+    }
+    sum *= ((sum%2) ? 7 : 11);
+	return (sum+((char*)data)[len-1]) % max;
 }
 
 void insert_hm(struct hm* map, void* data_key, int len, void* data_value, int int_value){
 	struct hm_entry* e, * prev_e = NULL;
-	int internal_idx = hash(data_key, len);
+	int internal_idx = hash(data_key, len, map->n_buckets);
 	if(!(e = map->buckets[internal_idx]))
 		e = (map->buckets[internal_idx] = calloc(sizeof(struct hm_entry), 1));
 	else{
@@ -110,10 +114,7 @@ _Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, in
 }
 
 struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key, int len, int* hash_ret){
-    /* is e just set to this and kept what it is? it seems that we're just setting the beginning ptr
-     * continously and not returning &e
-     */
-    int hashed_key = hash(data_key, len);
+    int hashed_key = hash(data_key, len, ph->maps[id]->n_buckets);
     struct hm_entry* e;
 
     if(hash_ret)*hash_ret = hashed_key;
@@ -161,20 +162,17 @@ void print_maps(struct persistent_hash* ph){
 int main(){
 	struct persistent_hash ph;	
 	int map_id = 0;
-	char data[6] = "asher";
-	char updata[6] = "ASHER";
+	char* data;
 	init_ph(&ph);
 
 	map_id = create_map(&ph);
 
-	insert_ph(&ph, map_id, data, 6);
-	insert_ph(&ph, map_id, data, 6);
-	insert_ph(&ph, map_id, updata, 6);
+    for(int i = 0; i < 20; ++i){
+        data = strdup("asher");
+        data[random() % 5] += random() % 9;
+        insert_ph(&ph, map_id, data, 6);
+    }
 
-    remove_ph(&ph, map_id, updata, 6);
-    remove_ph(&ph, map_id, data, 6);
-    remove_ph(&ph, map_id, data, 6);
-    remove_ph(&ph, map_id, updata, 6);
 
 	print_maps(&ph);
 }
