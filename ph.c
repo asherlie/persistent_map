@@ -31,7 +31,7 @@ struct hm_entry{
 	/* another optional field - an integer associated with the entry */
 	int int_value;
 
-	struct hm_entry* next;
+	struct hm_entry* next, * prev;
 };
 
 struct hm{
@@ -80,18 +80,20 @@ int hash(void* data, int len){
 }
 
 void insert_hm(struct hm* map, void* data_key, int len, void* data_value, int int_value){
-	struct hm_entry* e;
+	struct hm_entry* e, * prev_e = NULL;
 	int internal_idx = hash(data_key, len);
 	if(!(e = map->buckets[internal_idx]))
 		e = (map->buckets[internal_idx] = calloc(sizeof(struct hm_entry), 1));
 	else{
 		for(; e->next; e = e->next);
+        prev_e = e;
 		e = (e->next = malloc(sizeof(struct hm_entry)));
 	}
 	e->data_key = data_key;
 	e->len = len;
 	e->data_value = data_value;
 	e->int_value = int_value;
+    e->prev = prev_e;
 	e->next = NULL;
 }
 
@@ -101,7 +103,23 @@ _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
 	return 1;
 }
 
-void remove_ph(){
+_Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int len, void* data_value, int int_value){
+	if(!ph->maps[id])return 0;
+	insert_hm(ph->maps[id], data_key, len, data_value, int_value);
+	return 1;
+}
+
+struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key, int len){
+    struct hm_entry* e = ph->maps[id]->buckets[hash(data_key, len)];
+    for(; e; e = e->next){
+        if(!memcmp(e, data_key, len))break;
+    }
+    return e;
+}
+
+void remove_ph(struct persistent_hash* ph, int id, void* data_key, int len){
+    struct hm_entry* e = lookup_entry(ph, id, data_key, len);
+    if(!e)return;
 }
 
 void print_maps(struct persistent_hash* ph){
@@ -125,6 +143,8 @@ int main(){
 
 	map_id = create_map(&ph);
 
+	insert_ph(&ph, map_id, data, 6);
+	insert_ph(&ph, map_id, data, 6);
 	insert_ph(&ph, map_id, data, 6);
 
 	print_maps(&ph);
