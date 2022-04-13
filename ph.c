@@ -136,6 +136,7 @@ void print_maps(struct persistent_hash* ph){
 	}
 }
 
+#if 0
 int main(){
 	struct persistent_hash ph;	
 	int map_id = 0;
@@ -153,3 +154,4 @@ int main(){
 
 	print_maps(&ph);
 }
+#endif
