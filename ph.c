@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "ph.h"
+
 #if 0
 ph will have a list of hashmaps that will be kept in the memory of a running process
 
@@ -21,30 +23,6 @@ on startup, this queue is read from and all queues are rebuilt
 
 this is not resistant to machine restarts
 #endif
-
-struct hm_entry{
-	/* key in key value pair - can also be used standalone as hashed storage */
-	void* data_key;
-	int len;
-
-	/* this can be NULL - the value in key value pair */
-	void* data_value;
-	/* another optional field - an integer associated with the entry */
-	int int_value;
-
-	struct hm_entry* next, * prev;
-};
-
-struct hm{
-	struct hm_entry** buckets;
-	int n_buckets;
-};
-
-struct persistent_hash{
-	struct hm** maps;
-	int n_maps;
-	int cap;
-};
 
 void init_hm(struct hm* map, int n_buckets){
 	map->n_buckets = n_buckets;
@@ -76,9 +54,8 @@ int create_map(struct persistent_hash* ph){
 
 int hash(void* data, int len, int max){
     uint64_t sum = 0;
-    for(int i = 0; i < len; ++i){
-        sum += (int8_t)((char*)data)[i];
-    }
+    for(int i = 0; i < len; ++i)
+        sum += ((char*)data)[i];
     sum *= ((sum%2) ? 7 : 11);
 	return (sum+((char*)data)[len-1]) % max;
 }

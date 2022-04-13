@@ -21,3 +21,10 @@ struct persistent_hash{
 	int n_maps;
 	int cap;
 };
+
+int create_map(struct persistent_hash* ph);
+_Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len);
+_Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int len, void* data_value, int int_value);
+struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key, int len, int* hash_ret);
+_Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len);
+void print_maps(struct persistent_hash* ph);
