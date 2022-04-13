@@ -95,9 +95,7 @@ void insert_hm(struct hm* map, void* data_key, int len, void* data_value, int in
 	e->int_value = int_value;
     e->prev = prev_e;
 	e->next = NULL;
-    printf("jsut inserted %s with prev set to %s\n", (char*)data_key, (prev_e) ? (char*)prev_e->data_key : NULL);
 }
-
 
 _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
 	if(!ph->maps[id])return 0;
@@ -129,30 +127,22 @@ struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key
 _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len){
     int hashed_key;
     struct hm_entry* e = lookup_entry(ph, id, data_key, len, &hashed_key);
-    if(!e)return;
+    if(!e)return 0;
+    /* removing first element */
     if(!e->prev){
-        puts("removing idx 0");
-        /*tmp_e = e;*/
         ph->maps[id]->buckets[hashed_key] = e->next;
-        e->next->prev = NULL;
-        /*e = e->next;*/
-        /*e->prev = NULL;*/
+        if(e->next)e->next->prev = NULL;
         free(e);
-        return;
+        return 1;
     }
-    /* if this is the last element in a list of size > 1 */
-    /*if(!(*e)->next)*/
-    /*printf("setting %s->next to %s\n", (char*)e->prev->data_key, (char*)e->next->data_key);*/
+    /* removing final element */
     e->prev->next = e->next;
-    if(e->next){
-        /*printf("setting %s->next to %s\n", (char*)(*e)->prev->data_key, (char*)(*e)->next->data_key);*/
+    if(e->next)
         e->next->prev = e->prev;
-    }
     free(e);
-    /*this sets the bucket to 0*/
-    /*for some reason, setting *e to null is ruining entire map - is e idx 0 now*/
-    /**e is bucket[0], why?*/
     e = NULL;
+
+    return 1;
 }
 
 void print_maps(struct persistent_hash* ph){
@@ -182,6 +172,8 @@ int main(){
 	insert_ph(&ph, map_id, updata, 6);
 
     remove_ph(&ph, map_id, updata, 6);
+    remove_ph(&ph, map_id, data, 6);
+    remove_ph(&ph, map_id, data, 6);
     remove_ph(&ph, map_id, updata, 6);
 
 	print_maps(&ph);
