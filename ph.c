@@ -95,11 +95,9 @@ void insert_hm(struct hm* map, void* data_key, int len, void* data_value, int in
 	e->next = NULL;
 }
 
-we need to be able to lookup existing keys using memcpy()
-
 _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
 	if(!ph->maps[id])return 0;
-	insert_hm(ph->maps[id], data, len);
+	insert_hm(ph->maps[id], data, len, NULL, -1);
 	return 1;
 }
 
