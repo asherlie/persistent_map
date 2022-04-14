@@ -65,25 +65,40 @@ int hash(void* data, int len, int max){
 	return (sum+((char*)data)[len-1]) % max;
 }
 
-/*should we allow dupliate keys? probably not*/
-/*TODO: insertion on an existing key should overwrite*/
-/*there should be a function to increment int value*/
+/*TODO: there should be a function to increment int value*/
 void insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
 	struct hm_entry* e, * prev_e = NULL;
 	int internal_idx = hash(data_key, data_key_len, map->n_buckets);
+    _Bool alloc_e = 1;
 	if(!(e = map->buckets[internal_idx]))
 		e = (map->buckets[internal_idx] = calloc(sizeof(struct hm_entry), 1));
 	else{
-		for(; e->next; e = e->next);
+		for(; e->next; e = e->next){
+            if(e->data_key_len == data_key_len && !memcmp(e->data_key, data_key, data_key_len)){
+                /* we're modifying an existing entry */
+                alloc_e = 0;
+                break;
+            }
+        }
         prev_e = e;
-		e = (e->next = malloc(sizeof(struct hm_entry)));
+		if(alloc_e)e = (e->next = malloc(sizeof(struct hm_entry)));
 	}
-	e->data_key = data_key;
-	e->data_key_len = data_key_len;
-	e->data_value = data_value;
-    e->data_value_len = data_value_len;
+    /* TODO: we just update the fields provided in msg, is this the behavior we want? */
+	if(data_key){
+        e->data_key = data_key;
+        e->data_key_len = data_key_len;
+    }
+	if(data_value){
+        e->data_value = data_value;
+        e->data_value_len = data_value_len;
+    }
+    /* int_value is always overwritten - bad behavior?
+     * the user can always just lookup_entry and set it before requesting
+     *
+     * this also will be unnecessary once i implement int_value_add()
+     */
 	e->int_value = int_value;
-    e->prev = prev_e;
+    if(alloc_e)e->prev = prev_e;
 	e->next = NULL;
 }
 
