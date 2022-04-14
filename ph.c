@@ -65,6 +65,9 @@ int hash(void* data, int len, int max){
 	return (sum+((char*)data)[len-1]) % max;
 }
 
+/*should we allow dupliate keys? probably not*/
+/*TODO: insertion on an existing key should overwrite*/
+/*there should be a function to increment int value*/
 void insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
 	struct hm_entry* e, * prev_e = NULL;
 	int internal_idx = hash(data_key, data_key_len, map->n_buckets);
@@ -198,7 +201,7 @@ int restore_ph(struct persistent_hash* ph){
     if(fd < 0)return -1;
 
     while(recv_msg(fd, &msg)){
-        printf("performing action %i\n", msg.act);
+        printf("performing restore action %i\n", msg.act);
         perform_msg_action_ph(ph, &msg, -1);
     }
 
@@ -213,7 +216,7 @@ void print_maps(struct persistent_hash* ph){
             if(!ph->maps[i]->buckets[j])continue;
 			printf("  bucket %i:\n", j);
 			for(struct hm_entry* e = ph->maps[i]->buckets[j]; e; e = e->next){
-				printf("    %s %p:%i\n", (char*)e->data_key, e->data_key, e->data_value_len);
+				printf("    key: \"%s\" %p:%i, val: %i\n", (char*)e->data_key, e->data_key, e->data_value_len, e->int_value);
 			}
 		}
 	}
