@@ -10,8 +10,6 @@
 #include "msg.h"
 #include "ph.h"
 
-#define PORT 392
-
 #if 0
 should this just use network sockets?
 or should i keep this local
