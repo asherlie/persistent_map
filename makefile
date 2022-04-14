@@ -4,6 +4,7 @@ CFLAGS= -Wall -Wextra -Wpedantic -Werror -Wshadow -Wformat=2 -fno-common -g3 -pt
 all: ph_server
 
 ph_server: ph.o msg.o
+ph_client: msg.o
 
 ph.o:
 msg.o:
