@@ -12,6 +12,13 @@ enum action {CREATE_MAP, INSERT_PH_KEY_VALUE, LOOKUP_ENTRY, REMOVE_PH};
  *  remove_ph
  */
 struct ph_msg{
+    /* peer_sock is unique in that it's only used to
+     * communicate the peer socket between ph_server's read_request_thread
+     * and handler_thread
+     * since this socket fd is unique to each message it makes sense to
+     * add it here
+     */
+    int peer_sock;
     /* we need msg_id so that we can associate responses with the proper
      * requests once a response arrives
      *
