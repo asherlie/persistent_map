@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/select.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "msg.h"
 
@@ -56,7 +57,7 @@ _Bool recv_msg(int fd, struct ph_msg* msg){
 
         /*
          * make sure to FREE MEM
-         * fuck it woudl make so mch more sense to just dump after each modification
+         * it would make so mch more sense to just dump after each modification
          * actually maybe not because it woudl require >1 dump formats
         */
 
@@ -75,4 +76,53 @@ _Bool append_dump(char* fn, struct ph_msg* msg){
     _Bool ret = write_msg(fd, msg);
     close(fd);
     return ret;
+}
+/*
+ok, writing the request sending and handling code!
+
+sending will be in a separate file - ph_client.c
+there will be functions provided to send all enum action requests
+
+handling will be a bit more complicated, bt not by much
+*/
+
+void init_ph_msg_q(struct ph_msg_q* mq){
+    pthread_mutex_init(&mq->lock, NULL);
+    pthread_cond_init(&mq->nonempty, NULL);
+    mq->first = NULL;
+}
+
+void insert_ph_msg_q(struct ph_msg_q* mq, struct ph_msg* msg){
+    struct ph_msg_q_entry* e = calloc(1, sizeof(struct ph_msg_q_entry));
+    e->msg = msg;
+    pthread_mutex_lock(&mq->lock);
+    if(!mq->first)
+        mq->first = mq->last = e;
+    else{
+        mq->last->next = e;
+    }
+    pthread_mutex_unlock(&mq->lock);
+    pthread_cond_signal(&mq->nonempty);
+}
+
+struct ph_msg* pop_ph_msg_q(struct ph_msg_q* mq){
+    struct ph_msg_q_entry* e = NULL;
+    while(!e){
+        pthread_mutex_lock(&mq->lock);
+
+        e = mq->first;
+        /* TODO: is this ok usage of mutex? */
+        /* if q is empty, unlock and wait
+         * pthread_cond_wait() then re-locks and we'll catch
+         * the element in our next iteration
+         */
+        if(!e)pthread_cond_wait(&mq->nonempty, &mq->lock);
+        /* last is only used for insertion so there's no need to update it here
+         * when insert_ph_msg_q() sees that !first, last is updated
+         */
+        else mq->first = e->next;
+        pthread_mutex_unlock(&mq->lock);
+    }
+
+    return e->msg;
 }

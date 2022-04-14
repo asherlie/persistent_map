@@ -1,3 +1,5 @@
+#include <pthread.h>
+
 enum action {CREATE_MAP, INSERT_PH_KEY_VALUE, LOOKUP_ENTRY, REMOVE_PH};
 
 /* this struct contains all necessary fields for any possible message
@@ -30,6 +32,22 @@ struct ph_msg{
     void* data_value;
 };
 
+struct ph_msg_q_entry{
+    struct ph_msg* msg;
+    struct ph_msg_q_entry* next;
+};
+
+struct ph_msg_q{
+    pthread_mutex_t lock;
+    pthread_cond_t nonempty;
+    struct ph_msg_q_entry* first, * last;
+};
+
 _Bool write_msg(int fd, struct ph_msg* msg);
 _Bool recv_msg(int fd, struct ph_msg* msg);
 _Bool append_dump(char* fn, struct ph_msg* msg);
+
+
+void init_ph_msg_q(struct ph_msg_q* mq);
+void insert_ph_msg_q(struct ph_msg_q* mq, struct ph_msg* msg);
+struct ph_msg* pop_ph_msg_q(struct ph_msg_q* mq);
