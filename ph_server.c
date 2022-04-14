@@ -17,6 +17,12 @@ should this just use network sockets?
 or should i keep this local
 #endif
 
+struct shared_data{
+    struct ph_msg_q* q;
+    struct persistent_hash* ph;
+    int peer_sock;
+};
+
 int prep_sock(char* ip){
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in sin = {0};
@@ -31,10 +37,64 @@ int prep_sock(char* ip){
     return sock;
 }
 
+/* this thread pops messages from queue and handles them one at a time
+ * this design allows for all hash structures to be thread unsafe
+ * because they'll never be called concurrently
+ */
+void* handler_thread(void* v_sd){
+    struct shared_data* sd = v_sd;
+
+    while(1)
+        perform_msg_action_ph(sd->ph, pop_ph_msg_q(sd->q), sd->peer_sock);
+
+    return NULL;
+}
+
+/* this thread is spawned for each accepted connection - its sole purpose is
+ * to read a complete struct ph_msg and add it to the queue
+ *
+ * we don't handle these msgs here because the operations on the map aren't
+ * threadsafe
+ */
+void* read_request_thread(void* v_sd){
+    struct shared_data* sd = v_sd;
+    struct ph_msg* msg = malloc(sizeof(struct ph_msg));
+    if(recv_msg(sd->peer_sock, msg)){
+        insert_ph_msg_q(sd->q, msg);
+    }
+    else free(msg);
+    free(sd);
+    return NULL;
+}
+
+void spawn_read_request_thread(struct ph_msg_q* q, struct persistent_hash* ph, int sock){
+    struct shared_data* sd = malloc(sizeof(struct shared_data));
+    pthread_t pth;
+    sd->peer_sock = sock;
+    sd->q = q;
+    sd->ph = ph;
+
+    pthread_create(&pth, NULL, read_request_thread, sd);
+    pthread_detach(pth);
+}
+
 void run_ph_server(char* ip){
     struct persistent_hash ph;
-    int sock = prep_sock(ip);
+    struct ph_msg_q q;
+    pthread_t handler_pth;
+    struct shared_data handler_sd = {.q = &q, .ph = &ph, .peer_sock = -1};
+    int sock = prep_sock(ip), peer_sock;
+
     init_ph(&ph, ".dumpfile");
+    init_ph_msg_q(&q);
+
+    pthread_create(&handler_pth, NULL, handler_thread, &handler_sd);
+    /*pthread_detach();*/
+
+    while(1){
+        peer_sock = accept(sock, NULL, NULL);
+        spawn_read_request_thread(&q, &ph, peer_sock);
+    }
 }
 
 #if !1
