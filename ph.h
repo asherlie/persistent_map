@@ -30,5 +30,6 @@ _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len);
 _Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value);
 struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key, int len, int* hash_ret);
 _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len);
+_Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int peer_sock);
 int restore_ph(struct persistent_hash* ph);
 void print_maps(struct persistent_hash* ph);
