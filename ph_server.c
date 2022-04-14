@@ -43,9 +43,13 @@ int prep_sock(char* ip){
  */
 void* handler_thread(void* v_sd){
     struct shared_data* sd = v_sd;
+    struct ph_msg* msg;
 
-    while(1)
-        perform_msg_action_ph(sd->ph, pop_ph_msg_q(sd->q), sd->peer_sock);
+    while(1){
+        msg = pop_ph_msg_q(sd->q);
+        append_dump(sd->ph->dump_fn, msg);
+        perform_msg_action_ph(sd->ph, msg, sd->peer_sock);
+    }
 
     return NULL;
 }
@@ -95,6 +99,10 @@ void run_ph_server(char* ip){
         peer_sock = accept(sock, NULL, NULL);
         spawn_read_request_thread(&q, &ph, peer_sock);
     }
+}
+
+int main(){
+    run_ph_server("192.168.86.21");
 }
 
 #if !1
