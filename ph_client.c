@@ -62,6 +62,22 @@ _Bool insert_data(char* ip, int map_id, void* key, int key_len, void* data, int 
 struct ph_msg* lookup_data(){
 }
 
+_Bool add_int_value(char* ip, int map_id, void* key, int key_len, int num){
+    struct ph_msg msg = {0};
+    int peer_sock;
+
+    msg.act = ADD_INT_VALUE;
+    msg.map_id = map_id;
+    msg.data_key_len = key_len;
+    msg.data_key = key;
+    msg.int_value = num;
+
+    peer_sock = establish_conn(ip);
+    write_msg(peer_sock, &msg);
+    if(!recv_msg(peer_sock, &msg))return -1;
+    return msg.int_value;
+}
+
 _Bool remove_data(){
 }
 
