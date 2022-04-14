@@ -65,9 +65,9 @@ int hash(void* data, int len, int max){
 	return (sum+((char*)data)[len-1]) % max;
 }
 
-void insert_hm(struct hm* map, void* data_key, int len, void* data_value, int int_value){
+void insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
 	struct hm_entry* e, * prev_e = NULL;
-	int internal_idx = hash(data_key, len, map->n_buckets);
+	int internal_idx = hash(data_key, data_key_len, map->n_buckets);
 	if(!(e = map->buckets[internal_idx]))
 		e = (map->buckets[internal_idx] = calloc(sizeof(struct hm_entry), 1));
 	else{
@@ -76,8 +76,9 @@ void insert_hm(struct hm* map, void* data_key, int len, void* data_value, int in
 		e = (e->next = malloc(sizeof(struct hm_entry)));
 	}
 	e->data_key = data_key;
-	e->len = len;
+	e->data_key_len = data_key_len;
 	e->data_value = data_value;
+    e->data_value_len = data_value_len;
 	e->int_value = int_value;
     e->prev = prev_e;
 	e->next = NULL;
@@ -85,13 +86,13 @@ void insert_hm(struct hm* map, void* data_key, int len, void* data_value, int in
 
 _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
 	if(!ph->maps[id])return 0;
-	insert_hm(ph->maps[id], data, len, NULL, -1);
+	insert_hm(ph->maps[id], data, len, NULL, -1, -1);
 	return 1;
 }
 
-_Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int len, void* data_value, int int_value){
+_Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
 	if(!ph->maps[id])return 0;
-	insert_hm(ph->maps[id], data_key, len, data_value, int_value);
+	insert_hm(ph->maps[id], data_key, data_key_len, data_value, data_value_len, int_value);
 	return 1;
 }
 
@@ -132,21 +133,31 @@ _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len){
 _Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int peer_sock){
 /*enum action {CREATE_MAP, INSERT_PH_KEY_VALUE, LOOKUP_ENTRY, REMOVE_PH};*/
     struct ph_msg resp = {0};
+    struct hm_entry* e;
     /*int resp = -1;*/
     switch(pm->act){
         case CREATE_MAP:
             resp.int_value = create_map(ph);
             break;
         case INSERT_PH_KEY_VALUE:
-            resp.int_value = insert_ph_key_value(ph, pm->map_id, pm->data_key, pm->data_key_len, pm->data_value, pm->int_value);
+            resp.int_value = insert_ph_key_value(ph, pm->map_id, pm->data_key, pm->data_key_len, pm->data_value, pm->data_value_len, pm->int_value);
             break;
         case LOOKUP_ENTRY:
+            if((e = lookup_entry(ph, pm->map_id, pm->data_key, pm->data_key_len, NULL))){
+                resp.map_id = pm->map_id;
+                resp.data_key_len = pm->data_key_len;
+                resp.data_key = pm->data_key;
+                resp.data_value_len = e->data_value_len;
+                resp.data_value = e->data_value;
+                resp.int_value = e->int_value;
+            }
             // TODO: how do i return an entry
             // AH! with write_msg()
             // the receiver will just use a recv_msg() that i'll define it returns a populated msg
             break;
         case REMOVE_PH:
-            remove_ph(ph, pm->map_id, pm->data_key, pm->data_key_len);
+            if(remove_ph(ph, pm->map_id, pm->data_key, pm->data_key_len))
+                resp.int_value = 1;
             break;
     }
 
@@ -155,6 +166,7 @@ _Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int p
      * peer will keep connection open until they recv a response
      */
     if(peer_sock != -1){
+        /*if(resp_ptr)write_msg(peer_sock, resp_ptr);*/
         write_msg(peer_sock, &resp);
     }
     return resp.int_value >= 0;
@@ -201,7 +213,7 @@ void print_maps(struct persistent_hash* ph){
             if(!ph->maps[i]->buckets[j])continue;
 			printf("  bucket %i:\n", j);
 			for(struct hm_entry* e = ph->maps[i]->buckets[j]; e; e = e->next){
-				printf("    %s %p:%i\n", (char*)e->data_key, e->data_key, e->len);
+				printf("    %s %p:%i\n", (char*)e->data_key, e->data_key, e->data_value_len);
 			}
 		}
 	}
