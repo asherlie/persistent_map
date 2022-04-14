@@ -17,14 +17,17 @@ struct hm{
 };
 
 struct persistent_hash{
+    char* dump_fn;
 	struct hm** maps;
 	int n_maps;
 	int cap;
 };
 
+void init_ph(struct persistent_hash* ph, char* dump_fn);
 int create_map(struct persistent_hash* ph);
 _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len);
 _Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int len, void* data_value, int int_value);
 struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key, int len, int* hash_ret);
 _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len);
+int restore_ph(struct persistent_hash* ph);
 void print_maps(struct persistent_hash* ph);
