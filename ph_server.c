@@ -1,5 +1,5 @@
-#include <unistd.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -24,6 +24,10 @@ struct shared_data{
 int prep_sock(char* ip){
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in sin = {0};
+
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
+    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &(int){1}, sizeof(int));
+
     sin.sin_port = PORT;
     sin.sin_family = AF_INET;
     /*sin.sin_addr*/
@@ -45,8 +49,17 @@ void* handler_thread(void* v_sd){
 
     while(1){
         msg = pop_ph_msg_q(sd->q);
-        append_dump(sd->ph->dump_fn, msg);
-        perform_msg_action_ph(sd->ph, msg, sd->peer_sock);
+        printf("appending: %i\n", append_dump(sd->ph->dump_fn, msg));
+
+        /*
+         * peer sock must be passed along from read_request_thread!
+         * peer sock is not the right value!!!
+        */
+
+        /* we can't use sd->peer_sock here */
+        perform_msg_action_ph(sd->ph, msg, msg->peer_sock);
+        puts("performed an action, current state:");
+        print_maps(sd->ph);
     }
 
     return NULL;
@@ -62,6 +75,7 @@ void* read_request_thread(void* v_sd){
     struct shared_data* sd = v_sd;
     struct ph_msg* msg = malloc(sizeof(struct ph_msg));
     if(recv_msg(sd->peer_sock, msg)){
+        msg->peer_sock = sd->peer_sock;
         insert_ph_msg_q(sd->q, msg);
     }
     else free(msg);
@@ -88,6 +102,7 @@ void run_ph_server(char* ip){
     int sock = prep_sock(ip), peer_sock;
 
     init_ph(&ph, ".dumpfile");
+    restore_ph(&ph);
     init_ph_msg_q(&q);
 
     pthread_create(&handler_pth, NULL, handler_thread, &handler_sd);
