@@ -109,16 +109,13 @@ _Bool insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_val
     return 1;
 }
 
-_Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
-	if(!ph->maps[id])return 0;
-	insert_hm(ph->maps[id], data, len, NULL, -1, -1);
-	return 1;
-}
-
 _Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
 	if(!ph->maps[id])return 0;
-	insert_hm(ph->maps[id], data_key, data_key_len, data_value, data_value_len, int_value);
-	return 1;
+	return insert_hm(ph->maps[id], data_key, data_key_len, data_value, data_value_len, int_value);
+}
+
+_Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
+    return insert_ph_key_value(ph, id, data, len, NULL, -1, -1);
 }
 
 struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key, int len, int* hash_ret){
