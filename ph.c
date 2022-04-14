@@ -115,7 +115,7 @@ _Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, in
 }
 
 _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
-    return insert_ph_key_value(ph, id, data, len, NULL, -1, -1);
+    return insert_ph_key_value(ph, id, data, len, NULL, -1, 0);
 }
 
 struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key, int len, int* hash_ret){
@@ -128,6 +128,13 @@ struct hm_entry* lookup_entry(struct persistent_hash* ph, int id, void* data_key
         if(!memcmp(e->data_key, data_key, len))break;
     }
     return e;
+}
+
+_Bool add_int_value(struct persistent_hash* ph, int map_id, void* data_key, int len, int add){
+    struct hm_entry* e = lookup_entry(ph, map_id, data_key, len, NULL);
+    if(!e)return 0;
+    e->int_value += add;
+    return 1;
 }
 
 _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len){
@@ -151,7 +158,7 @@ _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len){
     return 1;
 }
 
-// each msg should send a response int for success, and an optional response buffer
+/* TODO: we need to handle invalid map IDs */
 _Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int peer_sock){
 /*enum action {CREATE_MAP, INSERT_PH_KEY_VALUE, LOOKUP_ENTRY, REMOVE_PH};*/
     struct ph_msg resp = {0};
@@ -176,6 +183,10 @@ _Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int p
             // TODO: how do i return an entry
             // AH! with write_msg()
             // the receiver will just use a recv_msg() that i'll define it returns a populated msg
+            break;
+        case ADD_INT_VALUE:
+            if(add_int_value(ph, pm->map_id, pm->data_key, pm->data_key_len, pm->int_value))
+                resp.int_value = 1;
             break;
         case REMOVE_PH:
             if(remove_ph(ph, pm->map_id, pm->data_key, pm->data_key_len))
