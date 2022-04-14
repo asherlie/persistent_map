@@ -31,6 +31,13 @@ int prep_sock(char* ip){
     return sock;
 }
 
+void run_ph_server(char* ip){
+    struct persistent_hash ph;
+    int sock = prep_sock(ip);
+    init_ph(&ph, ".dumpfile");
+}
+
+#if !1
 struct ph_msg* gen_sequence(){
     struct ph_msg* msg = calloc(10, sizeof(struct ph_msg));
     msg[0].act = CREATE_MAP;
@@ -81,6 +88,7 @@ int main(){
         print_maps(&ph);
     }
 }
+#endif
 /*
 maybe the client will spawn a thread each time a message is sent to read responses
 it could timeout after 5s
