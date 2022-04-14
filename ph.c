@@ -66,10 +66,13 @@ int hash(void* data, int len, int max){
 }
 
 /*TODO: there should be a function to increment int value*/
-void insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
+_Bool insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
 	struct hm_entry* e, * prev_e = NULL;
 	int internal_idx = hash(data_key, data_key_len, map->n_buckets);
     _Bool alloc_e = 1;
+
+    if(!data_key || !data_key_len)return 0;
+
 	if(!(e = map->buckets[internal_idx]))
 		e = (map->buckets[internal_idx] = calloc(sizeof(struct hm_entry), 1));
 	else{
@@ -83,11 +86,11 @@ void insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_valu
         prev_e = e;
 		if(alloc_e)e = (e->next = malloc(sizeof(struct hm_entry)));
 	}
-    /* TODO: we just update the fields provided in msg, is this the behavior we want? */
-	if(data_key){
-        e->data_key = data_key;
-        e->data_key_len = data_key_len;
-    }
+    /* TODO: we just update data if provided in msg, is this the behavior we want?
+     * doing this enables us to only update int_value if that's what we want to do
+     */
+    e->data_key = data_key;
+    e->data_key_len = data_key_len;
 	if(data_value){
         e->data_value = data_value;
         e->data_value_len = data_value_len;
@@ -98,8 +101,12 @@ void insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_valu
      * this also will be unnecessary once i implement int_value_add()
      */
 	e->int_value = int_value;
-    if(alloc_e)e->prev = prev_e;
-	e->next = NULL;
+    /* if we're overwriting an existing element, don't set prev or next */
+    if(alloc_e){
+        e->prev = prev_e;
+        e->next = NULL;
+    }
+    return 1;
 }
 
 _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len){
