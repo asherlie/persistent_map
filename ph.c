@@ -233,7 +233,8 @@ int restore_ph(struct persistent_hash* ph){
     if(fd < 0)return -1;
 
     while(recv_msg(fd, &msg)){
-        printf("performing restore action %i\n", msg.act);
+        /*printf("performing restore action %i\n", msg.act);*/
+        ++entries_restored;
         perform_msg_action_ph(ph, &msg, -1);
     }
 
@@ -248,7 +249,7 @@ void print_maps(struct persistent_hash* ph){
             if(!ph->maps[i]->buckets[j])continue;
 			printf("  bucket %i:\n", j);
 			for(struct hm_entry* e = ph->maps[i]->buckets[j]; e; e = e->next){
-				printf("    key: \"%s\" %p:%i, val: %i\n", (char*)e->data_key, e->data_key, e->data_value_len, e->int_value);
+				printf("    key: \"%s\" %p data_len: %i, data: %p, val: %i\n", (char*)e->data_key, e->data_key, e->data_value_len, e->data_value, e->int_value);
 			}
 		}
 	}
