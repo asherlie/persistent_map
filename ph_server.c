@@ -49,7 +49,7 @@ void* handler_thread(void* v_sd){
 
     while(1){
         msg = pop_ph_msg_q(sd->q);
-        printf("appending: %i\n", append_dump(sd->ph->dump_fn, msg));
+        append_dump(sd->ph->dump_fn, msg);
 
         /*
          * peer sock must be passed along from read_request_thread!
@@ -103,7 +103,7 @@ void run_ph_server(char* ip){
     int sock = prep_sock(ip), peer_sock;
 
     init_ph(&ph, ".dumpfile");
-    restore_ph(&ph);
+    printf("ph initiated, %i operations restored\n", restore_ph(&ph));
     init_ph_msg_q(&q);
 
     pthread_create(&handler_pth, NULL, handler_thread, &handler_sd);
@@ -166,7 +166,7 @@ int main(){
     else{
         struct persistent_hash ph;
         init_ph(&ph, "dumper.dee");
-        restore_ph(&ph);
+        printf("ph initiated, %i operations restored\n", restore_ph(&ph));
         print_maps(&ph);
     }
 }

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,6 +33,7 @@ int establish_conn(char* ip){
     return sock;
 }
 
+/* TODO: socks need to be closed after recv_msg(j */
 int new_map(char* ip){
     struct ph_msg msg = {0};
     int peer_sock;
@@ -60,6 +62,34 @@ _Bool insert_data(char* ip, int map_id, void* key, int key_len, void* data, int 
     write_msg(peer_sock, &msg);
     if(!recv_msg(peer_sock, &msg))return -1;
     return msg.int_value;
+}
+
+_Bool upload_file(char* ip, int map_id, char* fn){
+    FILE* fp = fopen(fn, "r");
+    uint8_t* data;
+    uint32_t len;
+    _Bool ret;
+
+    printf("%p\n", fp);
+    if(!fp)return 0;
+
+    fseek(fp, 0, SEEK_END);
+    data = malloc((len = ftell(fp)));
+    fseek(fp, 0, SEEK_SET);
+
+    if(fread(data, 1, len, fp) != len){
+        puts("UPSJk:");
+        fclose(fp);
+        return 0;
+    }
+
+    printf("uploading file of size %i\n", len);
+    ret = insert_data(ip, map_id, fn, strlen(fn)+1, data, len, 0);
+
+    free(data);
+
+    fclose(fp);
+    return ret;
 }
 
 struct ph_msg* lookup_data(char* ip, int map_id, void* key, int key_len){
