@@ -58,7 +58,8 @@ void* handler_thread(void* v_sd){
 
         /* we can't use sd->peer_sock here */
         perform_msg_action_ph(sd->ph, msg, msg->peer_sock);
-        puts("performed an action, current state:");
+        /* TODO: we should free up memory alloc'd by recv_msg() here */
+        printf("performed an action: %i, current state:\n", msg->act);
         print_maps(sd->ph);
     }
 

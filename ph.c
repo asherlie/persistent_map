@@ -65,7 +65,7 @@ int hash(void* data, int len, int max){
 	return (sum+((char*)data)[len-1]) % max;
 }
 
-/*TODO: there should be a function to increment int value*/
+// TODO: there's something wrong here - two duplicates are allowed, any more are limited
 _Bool insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
 	struct hm_entry* e, * prev_e = NULL;
 	int internal_idx = hash(data_key, data_key_len, map->n_buckets);
@@ -89,8 +89,10 @@ _Bool insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_val
     /* TODO: we just update data if provided in msg, is this the behavior we want?
      * doing this enables us to only update int_value if that's what we want to do
      */
-    e->data_key = data_key;
-    e->data_key_len = data_key_len;
+    if(alloc_e){
+        e->data_key = data_key;
+        e->data_key_len = data_key_len;
+    }
 	if(data_value){
         e->data_value = data_value;
         e->data_value_len = data_value_len;

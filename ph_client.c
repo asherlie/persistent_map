@@ -6,6 +6,8 @@
 
 #include "msg.h"
 
+/* TODO: all request functions should share code, they're so similar */
+
 int establish_conn(char* ip){
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in peer_addr = {0};
@@ -59,7 +61,22 @@ _Bool insert_data(char* ip, int map_id, void* key, int key_len, void* data, int 
     return msg.int_value;
 }
 
-struct ph_msg* lookup_data(){
+struct ph_msg* lookup_data(char* ip, int map_id, void* key, int key_len){
+    struct ph_msg* msg = calloc(1, sizeof(struct ph_msg));
+    int peer_sock;
+
+    msg->act = LOOKUP_ENTRY;
+    msg->map_id = map_id;
+    msg->data_key_len = key_len;
+    msg->data_key = key;
+
+    peer_sock = establish_conn(ip);
+    write_msg(peer_sock, msg);
+    if(!recv_msg(peer_sock, msg)){
+        free(msg);
+        return NULL;
+    }
+    return msg;
 }
 
 _Bool add_int_value(char* ip, int map_id, void* key, int key_len, int num){
@@ -78,7 +95,19 @@ _Bool add_int_value(char* ip, int map_id, void* key, int key_len, int num){
     return msg.int_value;
 }
 
-_Bool remove_data(){
+_Bool remove_data(char* ip, int map_id, void* key, int key_len){
+    struct ph_msg msg = {0};
+    int peer_sock;
+
+    msg.act = REMOVE_PH;
+    msg.data_key_len = key_len;
+    msg.data_key = key;
+    msg.map_id = map_id;
+
+    peer_sock = establish_conn(ip);
+    write_msg(peer_sock, &msg);
+    if(!recv_msg(peer_sock, &msg))return -1;
+    return msg.int_value;
 }
 
 int main(){
