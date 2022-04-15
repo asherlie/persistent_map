@@ -62,7 +62,7 @@ _Bool recv_msg(int fd, struct ph_msg* msg){
         */
 
         msg->data_key = calloc(1, msg->data_key_len);
-        msg->data_value = calloc(1, msg->data_key_len);
+        msg->data_value = calloc(1, msg->data_value_len);
 
         ret &= read(fd, msg->data_key, msg->data_key_len) == msg->data_key_len;
         ret &= read(fd, msg->data_value, msg->data_value_len) == msg->data_value_len;
