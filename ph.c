@@ -65,9 +65,9 @@ int hash(void* data, int len, int max){
 	return (sum+((char*)data)[len-1]) % max;
 }
 
-// TODO: there's something wrong here - two duplicates are allowed, any more are limited
+// TODO: data_value is non-NULL when it shouldn't be
 _Bool insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value){
-	struct hm_entry* e, * prev_e = NULL;
+	struct hm_entry* e, * last_e = NULL;
 	int internal_idx = hash(data_key, data_key_len, map->n_buckets);
     _Bool alloc_e = 1;
 
@@ -76,15 +76,15 @@ _Bool insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_val
 	if(!(e = map->buckets[internal_idx]))
 		e = (map->buckets[internal_idx] = calloc(sizeof(struct hm_entry), 1));
 	else{
-		for(; e->next; e = e->next){
+		for(; e; e = e->next){
             if(e->data_key_len == data_key_len && !memcmp(e->data_key, data_key, data_key_len)){
                 /* we're modifying an existing entry */
                 alloc_e = 0;
                 break;
             }
+            last_e = e;
         }
-        prev_e = e;
-		if(alloc_e)e = (e->next = malloc(sizeof(struct hm_entry)));
+		if(alloc_e)e = (last_e->next = malloc(sizeof(struct hm_entry)));
 	}
     /* TODO: we just update data if provided in msg, is this the behavior we want?
      * doing this enables us to only update int_value if that's what we want to do
@@ -100,12 +100,12 @@ _Bool insert_hm(struct hm* map, void* data_key, int data_key_len, void* data_val
     /* int_value is always overwritten - bad behavior?
      * the user can always just lookup_entry and set it before requesting
      *
-     * this also will be unnecessary once i implement int_value_add()
+     * this is unnecessary due to int_value_add()
      */
 	e->int_value = int_value;
     /* if we're overwriting an existing element, don't set prev or next */
     if(alloc_e){
-        e->prev = prev_e;
+        e->prev = last_e;
         e->next = NULL;
     }
     return 1;

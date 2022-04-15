@@ -110,6 +110,7 @@ _Bool remove_data(char* ip, int map_id, void* key, int key_len){
     return msg.int_value;
 }
 
+/* TODO: test lookup_data() */
 int main(){
     char ip[] = "192.168.86.21";
     char key[] = "/home/asher/somefile.extension";
