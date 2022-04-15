@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "ph_client.h"
 #include "msg.h"
 
 /* TODO: all request functions should share code, they're so similar */
@@ -110,6 +111,7 @@ _Bool remove_data(char* ip, int map_id, void* key, int key_len){
     return msg.int_value;
 }
 
+#if 0
 /* TODO: test lookup_data() */
 int main(){
     char ip[] = "192.168.86.21";
@@ -118,3 +120,4 @@ int main(){
     /*printf("new map created with id: %i\n", (map_id = new_map(ip)));*/
     printf("insert_data(): %i\n", insert_data(ip, map_id, key, sizeof(key), NULL, 0, 11));
 }
+#endif
