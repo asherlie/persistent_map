@@ -70,7 +70,6 @@ _Bool upload_file(char* ip, int map_id, char* fn){
     uint32_t len;
     _Bool ret;
 
-    printf("%p\n", fp);
     if(!fp)return 0;
 
     fseek(fp, 0, SEEK_END);
@@ -108,6 +107,17 @@ struct ph_msg* lookup_data(char* ip, int map_id, void* key, int key_len){
         return NULL;
     }
     return msg;
+}
+
+_Bool download_file(char* ip, int map_id, char* fn, char* new_fn){
+    struct ph_msg* msg = lookup_data(ip, map_id, fn, strlen(fn)+1);
+    FILE* fp;
+    if(!msg)return 0;
+    fp = fopen((new_fn) ? new_fn : fn, "w");
+    fwrite(msg->data_value, 1, msg->data_value_len, fp);
+    fclose(fp);
+
+    return 1;
 }
 
 _Bool add_int_value(char* ip, int map_id, void* key, int key_len, int num){
