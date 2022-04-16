@@ -40,10 +40,13 @@ void init_ph(struct persistent_hash* ph, char* dump_fn){
 	ph->maps = malloc(sizeof(struct hm*)*ph->cap);
 }
 
-/* creates a new map and returns the assigned map ID */
-int create_map(struct persistent_hash* ph){
+/* creates a new map and returns the assigned map ID - if conditional creation is enabled, a map will only be
+ * created if there is no existing map
+ */
+int create_map(struct persistent_hash* ph, _Bool conditional){
 	struct hm** tmp_maps;
 	int id;
+    if(conditional && ph->n_maps)return -1;
 	if(ph->n_maps == ph->cap){
 		ph->cap *= 2;
 		tmp_maps = malloc(sizeof(struct hm*)*ph->cap);
@@ -168,7 +171,7 @@ _Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int p
     /*int resp = -1;*/
     switch(pm->act){
         case CREATE_MAP:
-            resp.int_value = create_map(ph);
+            resp.int_value = create_map(ph, pm->int_value);
             break;
         case INSERT_PH_KEY_VALUE:
             resp.int_value = insert_ph_key_value(ph, pm->map_id, pm->data_key, pm->data_key_len, pm->data_value, pm->data_value_len, pm->int_value);
