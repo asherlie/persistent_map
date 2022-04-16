@@ -9,6 +9,8 @@ int main(int a, char** b){
     if(a < 4)return 0;
     switch(tolower(*b[1])){
         case 'u':
+            /* creating a map with index 0 if one doesn't exist */
+            new_map_conditional(b[3], 1);
             if(upload_file(b[3], 0, b[2]))
                 puts("succesfully uploaded file");
             else puts("failed to upload file");
