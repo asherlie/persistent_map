@@ -24,8 +24,9 @@ struct persistent_hash{
 	int cap;
 };
 
+/* TODO: hash operations do not need to be exposed in this header */
 void init_ph(struct persistent_hash* ph, char* dump_fn);
-int create_map(struct persistent_hash* ph);
+int create_map(struct persistent_hash* ph, _Bool conditional);
 _Bool insert_ph(struct persistent_hash* ph, int id, void* data, int len);
 _Bool insert_ph_key_value(struct persistent_hash* ph, int id, void* data_key, int data_key_len, void* data_value, int data_value_len, int int_value);
 _Bool add_int_value(struct persistent_hash* ph, int map_id, void* data_key, int len, int add);

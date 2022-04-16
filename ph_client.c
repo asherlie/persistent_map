@@ -34,10 +34,11 @@ int establish_conn(char* ip){
 }
 
 /* TODO: socks need to be closed after recv_msg(j */
-int new_map(char* ip){
+int new_map_conditional(char* ip, _Bool conditional_creation){
     struct ph_msg msg = {0};
     int peer_sock;
     msg.act = CREATE_MAP;
+    msg.int_value = conditional_creation;
 
     peer_sock = establish_conn(ip);
     if(peer_sock == -1)return -1;
@@ -45,6 +46,10 @@ int new_map(char* ip){
     msg.int_value = -1;
     if(!recv_msg(peer_sock, &msg))return -1;
     return msg.int_value;
+}
+
+int new_map(char* ip){
+    return new_map_conditional(ip, 0);
 }
 
 _Bool insert_data(char* ip, int map_id, void* key, int key_len, void* data, int data_len, int int_value){
