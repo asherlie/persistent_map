@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -163,6 +164,48 @@ _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len){
     return 1;
 }
 
+/*
+ * add list keys which lists all keys
+ * that are shorter than a certain length
+ * print the first n bytes that are alphanum
+ * 
+ * adds them all to a list of strings and sends bakc that
+ * int_value stores len
+ * "asher"\0"two"\0"three"
+*/
+/* the number of chars in the beginning of a buffer that are alphanumeric */
+int alnum_chars(char* buf, int len){
+    int i;
+    for(i = 0; i < len; ++i){
+        if(!(isalnum(buf[i]) || buf[i] == '.' || buf[i] == '_'))break;
+    }
+    return i;
+}
+
+char* create_str_key_list(struct persistent_hash* ph, int map_id, int* buflen, int* n_keys){
+    int bufsz = 100, len = 0, ac;
+    char* ret = malloc(bufsz), * tmp_ret;
+    *n_keys = 0;
+    for(int i = 0; i < ph->maps[map_id]->n_buckets; ++i){
+        for(struct hm_entry* e = ph->maps[map_id]->buckets[i]; e; e = e->next){
+            if(!(ac = alnum_chars(e->data_key, e->data_key_len)))continue;
+            if(len+ac+1 == bufsz){
+                bufsz += (ac+10);
+                tmp_ret = malloc(bufsz);
+                memcpy(tmp_ret, ret, len);
+                free(ret);
+                ret = tmp_ret;
+            }
+            memcpy(ret+len, e->data_key, ac);
+            len += ac;
+            ret[len++] = 0;
+            ++(*n_keys);
+        }
+    }
+    *buflen = len;
+    return ret;
+}
+
 /* TODO: we need to handle invalid map IDs */
 _Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int peer_sock){
 /*enum action {CREATE_MAP, INSERT_PH_KEY_VALUE, LOOKUP_ENTRY, REMOVE_PH};*/
@@ -196,6 +239,11 @@ _Bool perform_msg_action_ph(struct persistent_hash* ph, struct ph_msg* pm, int p
         case REMOVE_PH:
             if(remove_ph(ph, pm->map_id, pm->data_key, pm->data_key_len))
                 resp.int_value = 1;
+            break;
+        case LIST_KEYS:
+            puts("making key list");
+            resp.data_key = create_str_key_list(ph, pm->map_id, &resp.data_key_len, &resp.int_value);
+            printf("responding with keylen of %i and n idx of %i\n", resp.data_key_len, resp.int_value);
             break;
     }
 

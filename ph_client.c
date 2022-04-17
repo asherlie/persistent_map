@@ -125,6 +125,33 @@ _Bool download_file(char* ip, int map_id, char* fn, char* new_fn){
     return 1;
 }
 
+char** list_str_keys(char* ip, int map_id, int* len){
+    struct ph_msg msg = {0};
+    int peer_sock, idx = 0;
+    char** ret, * cursor;
+
+    msg.act = LIST_KEYS;
+    msg.map_id = map_id;
+    peer_sock = establish_conn(ip);
+    write_msg(peer_sock, &msg);
+    if(!recv_msg(peer_sock, &msg) || msg.int_value <= 0)return NULL;
+
+    ret = malloc(sizeof(char*)*msg.int_value);
+
+    cursor = msg.data_key;
+    while(idx < msg.int_value){
+        /* fine for now because we don't free msg's memory */
+        ret[idx++] = cursor;
+        /* this should never occur */
+        /*if(!(cursor = strchr(cursor, 0)))break;*/
+        cursor = strchr(cursor, 0)+1;
+        /*ret[idx++] = strdup(cursor);*/
+    }
+    *len = msg.int_value;
+
+    return ret;
+}
+
 _Bool add_int_value(char* ip, int map_id, void* key, int key_len, int num){
     struct ph_msg msg = {0};
     int peer_sock;

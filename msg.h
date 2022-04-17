@@ -2,7 +2,7 @@
 
 #define PORT 392
 
-enum action {CREATE_MAP, INSERT_PH_KEY_VALUE, LOOKUP_ENTRY, ADD_INT_VALUE, REMOVE_PH};
+enum action {CREATE_MAP, INSERT_PH_KEY_VALUE, LOOKUP_ENTRY, ADD_INT_VALUE, REMOVE_PH, LIST_KEYS};
 
 /* this struct contains all necessary fields for any possible message
  * msg types include:
