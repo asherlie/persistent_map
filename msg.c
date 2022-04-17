@@ -37,7 +37,7 @@ _Bool recv_msg(int fd, struct ph_msg* msg){
 
     FD_ZERO(&set);
     FD_SET(fd, &set);
-    timeout.tv_sec = 5;
+    timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
     if(select(fd+1, &set, NULL, NULL, &timeout) > 0){
