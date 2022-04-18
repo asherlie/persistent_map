@@ -177,7 +177,7 @@ _Bool remove_ph(struct persistent_hash* ph, int id, void* data_key, int len){
 int alnum_chars(char* buf, int len){
     int i;
     for(i = 0; i < len; ++i){
-        if(!(isalnum(buf[i]) || buf[i] == '.' || buf[i] == '_'))break;
+        if(!(isalnum(buf[i]) || buf[i] == '/' || buf[i] == '.' || buf[i] == '_'))break;
     }
     return i;
 }
